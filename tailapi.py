@@ -208,7 +208,7 @@ class key_class(dk):
             return [ k for k, v in self.get_all(all_override = True).items() if not v.capabilities ]
 
 @click.group(no_args_is_help = True)
-@click.option("-a", '--api-key', default = environ["TAILSCALE_APIKEY"])
+@click.option("-a", '--api-key', default = environ.get("TAILSCALE_APIKEY", default = None))
 @click.option(
     "-d",
     '--devices',
@@ -250,6 +250,8 @@ every index here matches to the same index in `--keys', while a value of `all' i
 @click.option("-v", "--verbose", is_flag = True)
 @click.pass_context
 def tailapi(ctx, api_key, domain, devices, device_response_files, key_response_files, recreate_response, keys, dry_run, verbose, excluded):
+    if not api_key:
+        raise click.UsageError("Sorry; you need to pass in an api key either via the `--api-key' option, or by setting the environment variable `TAILSCALE_APIKEY'!")
     ctx.ensure_object(dict)
     auth = HTTPBasicAuth(api_key, "")
     argument_dict = dict(
