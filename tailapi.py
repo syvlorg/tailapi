@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from addict import Dict
+from ipaddress import ip_address
 from more_itertools import intersperse
 from os import environ
 from os.path import exists
@@ -109,7 +110,7 @@ class device_class(dk):
         if self.all or all_override:
             all_responses = Dict({
                 device["name"].split(".")[0] : device for device in self.get_response(
-                    f"https://api.tailscale.com/api/v2/tailnet/{self.domain}/devices",
+                    f"https://api.tailscale.com/api/v2/tailnet/{self.domain}/devices?fields=all",
                     f'Sorry; something happened when trying to get all devices!',
                 )["devices"]
             })
@@ -257,12 +258,15 @@ def tailapi(ctx, api_key, domain, devices, device_response_files, key_response_f
     argument_dict = dict(
         auth = auth,
         domain = domain,
-        values = keys,
         recreate_response = recreate_response,
-        response_files = key_response_files,
         excluded = excluded,
     )
-    ctx.obj.cls = eval(("key" if keys or (ctx.invoked_subcommand == "create") else "device") + "_class")(**argument_dict)
+    ctx.obj.type = "key" if keys or (ctx.invoked_subcommand == "create") else "device"
+    ctx.obj.cls = eval(ctx.obj.type + "_class")(
+        values = keys if ctx.obj.type == "key" else devices,
+        response_files = key_response_files if ctx.obj.type == "key" else device_response_files,
+        **argument_dict
+    )
     ctx.obj.dry_run = dry_run
     ctx.obj.verbose = verbose
 
@@ -287,11 +291,47 @@ def get(ctx, option):
     for dk in (responses := ctx.obj.cls.get_all()):
         print(responses[dk][option])
 
+@tailapi.command()
+@click.option("-4", "--ipv4", is_flag = True)
+@click.option("-6", "--ipv6", is_flag = True)
+@click.pass_context
+def ip(ctx, ipv4, ipv6):
+    both = (ipv4 and ipv6) or ((not ipv4) and (not ipv6))
+    responses = ctx.obj.cls.get_all()
+    ips = Dict(dict())
+    for dk, v in responses.items():
+        ipvs = [ ip_address(i) for i in v.addresses ]
+        for i in ipvs:
+            if ips[dk][i.version]:
+                ips[dk][i.version].append(i)
+            else:
+                ips[dk][i.version] = [ i ]
+    if ipv4:
+        if len(ips) == 0:
+            pass
+        if len(ips) == 1:
+            for i in ips[next(iter(ips))][4]:
+                print(i)
+        else:
+            pprint({ dk : { 4 : v[4] } for dk, v in ips.items() if v[4] })
+    if ipv6:
+        if len(ips) == 0:
+            pass
+        if len(ips) == 1:
+            for i in ips[next(iter(ips))][6]:
+                print(i)
+        else:
+            pprint({ dk : { 6 : v[6] } for dk, v in ips.items() if v[6] })
+    if both:
+        pprint(ips)
+
 # Adapted From:
 # Answer: https://stackoverflow.com/a/18178379/10827766
 # User: Antti Haapala -- Слава Україні | https://stackoverflow.com/users/918959/antti-haapala-%d0%a1%d0%bb%d0%b0%d0%b2%d0%b0-%d0%a3%d0%ba%d1%80%d0%b0%d1%97%d0%bd%d1%96
 class Transformer(ast.NodeTransformer):
-    ALLOWED_NAMES = set([])
+    ALLOWED_NAMES = set([
+
+    ])
     ALLOWED_NODE_TYPES = set([
         "Expression",
         "BoolOp",
