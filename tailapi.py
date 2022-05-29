@@ -294,8 +294,9 @@ def get(ctx, option):
 @tailapi.command()
 @click.option("-4", "--ipv4", is_flag = True)
 @click.option("-6", "--ipv6", is_flag = True)
+@click.option("-f", "--first", is_flag = True)
 @click.pass_context
-def ip(ctx, ipv4, ipv6):
+def ip(ctx, ipv4, ipv6, first):
     both = (ipv4 and ipv6) or ((not ipv4) and (not ipv6))
     responses = ctx.obj.cls.get_all()
     ips = Dict(dict())
@@ -310,16 +311,24 @@ def ip(ctx, ipv4, ipv6):
         if len(ips) == 0:
             pass
         if len(ips) == 1:
-            for i in ips[next(iter(ips))][4]:
-                print(i)
+            dk = next(iter(ips))
+            if first or (len(ips[dk][4]) <= 1):
+                print(ips[dk][4][0])
+            else:
+                for i in ips[dk][4]:
+                    print(i)
         else:
             pprint({ dk : { 4 : v[4] } for dk, v in ips.items() if v[4] })
     if ipv6:
         if len(ips) == 0:
             pass
         if len(ips) == 1:
-            for i in ips[next(iter(ips))][6]:
-                print(i)
+            dk = next(iter(ips))
+            if first or (len(ips[dk][6]) <= 1):
+                print(ips[dk][6][0])
+            else:
+                for i in ips[dk][6]:
+                    print(i)
         else:
             pprint({ dk : { 6 : v[6] } for dk, v in ips.items() if v[6] })
     if both:
