@@ -479,6 +479,161 @@ class Group:
         else:
             yield from self._results()
 
+def and_or_values(
+    responses,
+    tags,
+    excluded_tags,
+    groups,
+    or_pt,
+    using_keys,
+    ctx,
+    ephemeral,
+    not_ephemeral,
+    reusable,
+    not_reusable,
+    preauthorized,
+    not_preauthorized,
+):
+    values = []
+    tags = { f"tag:{tag}" for tag in tags if not tag.startswith("tag:") }
+    excluded_tags = { f"tag:{tag}" for tag in excluded_tags if not tag.startswith("tag:") }
+    variables = [ tags, excluded_tags, ephemeral, not_ephemeral, reusable, not_reusable, preauthorized, not_preauthorized ]
+    group_opts = dict(
+        ephemeral = ephemeral,
+        excluded_tags = excluded_tags,
+        groups = groups,
+        not_ephemeral = not_ephemeral,
+        not_preauthorized = not_preauthorized,
+        not_reusable = not_reusable,
+        preauthorized = preauthorized,
+        reusable = reusable,
+        tags = tags,
+        using_keys = using_keys,
+        verbose = ctx.obj.verbose,
+    )
+    if any([ groups ] + variables):
+        if or_pt:
+            for dk, v in responses.items():
+                group = Group(
+                    delimiter = "or",
+                    dk = dk,
+                    value = v,
+                    ** group_opts,
+                )
+                if using_keys:
+                    if any((
+                        (ephemeral and v.capabilities.devices.create.ephemeral),
+                        (not_ephemeral and not v.capabilities.devices.create.ephemeral),
+                        (not_preauthorized and not v.capabilities.devices.create.preauthorized),
+                        (not_reusable and not v.capabilities.devices.create.reusable),
+                        (preauthorized and v.capabilities.devices.create.preauthorized),
+                        (reusable and v.capabilities.devices.create.reusable),
+                        any(group.results()),
+                        any(tag in v.capabilities.devices.create.tags for tag in tags),
+                        any(tag not in v.capabilities.devices.create.tags for tag in excluded_tags),
+                    )):
+                        values.append(dk)
+                else:
+                    if any(
+                        any(group.results()),
+                        any(tag in v.tags for tag in tags),
+                        any(tag not in v.tags for tag in excluded_tags),
+                    ):
+                        values.append(dk)
+        else:
+            for dk, v in responses.items():
+                group = Group(
+                    delimiter = "and",
+                    dk = dk,
+                    value = v,
+                    ** group_opts,
+                )
+                if using_keys:
+                    if all(n for n in (
+                        (ephemeral and v.capabilities.devices.create.ephemeral) if ephemeral else None,
+                        (not_ephemeral and not v.capabilities.devices.create.ephemeral) if not_ephemeral else None,
+                        (not_preauthorized and not v.capabilities.devices.create.preauthorized) if not_preauthorized else None,
+                        (not_reusable and not v.capabilities.devices.create.reusable) if not_reusable else None,
+                        (preauthorized and v.capabilities.devices.create.preauthorized) if preauthorized else None,
+                        (reusable and v.capabilities.devices.create.reusable) if reusable else None,
+                        all(group.results()) if groups else None,
+                        all(tag in v.capabilities.devices.create.tags for tag in tags) if tags else None,
+                        all(tag not in v.capabilities.devices.create.tags for tag in excluded_tags) if excluded_tags else None,
+                    ) if n is not None):
+                        values.append(dk)
+                else:
+                    if all(n for n in (
+                        all(group.results()) if groups else None,
+                        all(tag in v.tags for tag in tags) if tags else None,
+                        all(tag not in v.tags for tag in excluded_tags) if excluded_tags else None,
+                    ) if n is not None):
+                        values.append(dk)
+    return values
+
+@tailapi.command()
+@click.option("-t", "--tags", multiple = True)
+@click.option("-T", "--excluded-tags", multiple = True)
+@click.option("-e", "--ephemeral", is_flag = True)
+@click.option("-p", "--preauthorized", is_flag = True)
+@click.option("-r", "--reusable", is_flag = True)
+@click.option("-E", "--not-ephemeral", is_flag = True)
+@click.option("-P", "--not-preauthorized", is_flag = True)
+@click.option("-R", "--not-reusable", is_flag = True)
+@click.option("-A", "--api-keys", is_flag = True)
+@click.option(
+    "-a",
+    "--and-pt",
+    cls = oreo.Option,
+    xor = [ "OR" ],
+    is_flag = True,
+    help = """If a combination of `ephemeral', `preauthorized', `reusable', and tags are used,
+this flag deletes devices or keys with all of the specified tags and properties.
+Note that properties don't work with devices. This is the default.""",
+)
+@click.option(
+    "-o",
+    "--or-pt",
+    cls = oreo.Option,
+    xor = [ "AND" ],
+    is_flag = True,
+    help = """If a combination of `ephemeral', `preauthorized', `reusable', and tags are used,
+this flag deletes devices or keys with any of the specified tags and properties. Note that properties don't work with devices.""",
+)
+@click.option(
+    "-g",
+    "--groups",
+    help = """Strings of properties and tags following boolean logic (`&&', `&', or `and', and `||', `|', and `or'),
+such as `(ephemeral or reusable) and (tag:server or tag:relay)' deleting all keys with the ephemeral or reusable properties,
+and with the server or relay tags.
+Can be specified multiple times, where `--or-pt' and `--and-pt' will be used to dictate the interactions between groups,
+and can be used with other property and tag options, such as `--ephemeral', etc.
+Negation can be achieved with `!' prefixed to the properties or tags, such as `!ephemeral' or `!tag:server'. Note that properties don't work with devices.""",
+    multiple = True,
+)
+@click.pass_context
+def filter(ctx, api_keys, and_pt, or_pt, tags, excluded_tags, ephemeral, not_ephemeral, reusable, not_reusable, preauthorized, not_preauthorized, groups):
+    using_keys = isinstance(ctx.obj.cls, key_class)
+    if api_keys and using_keys:
+        pprint(ctx.obj.cls.get_api_keys(verbose = True))
+    else:
+        responses = ctx.obj.cls.get_all()
+        values = and_or_values(
+            responses,
+            tags,
+            excluded_tags,
+            groups,
+            or_pt,
+            using_keys,
+            ctx,
+            ephemeral,
+            not_ephemeral,
+            reusable,
+            not_reusable,
+            preauthorized,
+            not_preauthorized,
+        )
+        pprint({ value : responses[value] for value in values } if values else responses)
+
 @tailapi.command()
 @click.option("-t", "--tags", multiple = True)
 @click.option("-T", "--excluded-tags", multiple = True)
@@ -522,92 +677,26 @@ Negation can be achieved with `!' prefixed to the properties or tags, such as `!
 @click.pass_context
 def delete(ctx, do_not_prompt, and_pt, or_pt, tags, excluded_tags, ephemeral, not_ephemeral, reusable, not_reusable, preauthorized, not_preauthorized, groups):
     using_keys = isinstance(ctx.obj.cls, key_class)
+    responses = ctx.obj.cls.get_all()
+    values = and_or_values(
+        responses,
+        tags,
+        excluded_tags,
+        groups,
+        or_pt,
+        using_keys,
+        ctx,
+        ephemeral,
+        not_ephemeral,
+        reusable,
+        not_reusable,
+        preauthorized,
+        not_preauthorized,
+    )
     all_your_specified = "ALL YOUR" if ctx.obj.cls.all else "THE SPECIFIED"
     devices_or_keys = "AUTHKEYS" if using_keys else "DEVICES"
-    input_message = f'THIS WILL DELETE {all_your_specified} {devices_or_keys} FROM YOUR TAILNET! TO CONTINUE, PLEASE TYPE IN "DELETE {devices_or_keys}" WITHOUT THE QUOTES:\n\t'
+    input_message = f'THIS WILL DELETE {all_your_specified} {devices_or_keys} [ {", ".join(values if values else responses.keys())} ] FROM YOUR TAILNET! TO CONTINUE, PLEASE TYPE IN "DELETE {devices_or_keys}" WITHOUT THE QUOTES:\n\t'
     input_response = f"DELETE {devices_or_keys}"
-    values = []
-    variables = [ tags, excluded_tags, ephemeral, not_ephemeral, reusable, not_reusable, preauthorized, not_preauthorized ]
-    tags = { f"tag:{tag}" for tag in tags }
-    excluded_tags = { f"tag:{tag}" for tag in excluded_tags }
-    if any([ groups ] + variables):
-        responses = ctx.obj.cls.get_all()
-        if or_pt:
-            for dk, v in responses.items():
-                group = Group(
-                    delimiter = "or",
-                    dk = dk,
-                    ephemeral = ephemeral,
-                    excluded_tags = excluded_tags,
-                    groups = groups,
-                    not_ephemeral = not_ephemeral,
-                    not_preauthorized = not_preauthorized,
-                    not_reusable = not_reusable,
-                    preauthorized = preauthorized,
-                    reusable = reusable,
-                    tags = tags,
-                    using_keys = using_keys,
-                    value = v,
-                    verbose = ctx.obj.verbose,
-                )
-                if using_keys:
-                    if any((
-                        (ephemeral and v.capabilities.devices.create.ephemeral),
-                        (not_ephemeral and not v.capabilities.devices.create.ephemeral),
-                        (not_preauthorized and not v.capabilities.devices.create.preauthorized),
-                        (not_reusable and not v.capabilities.devices.create.reusable),
-                        (preauthorized and v.capabilities.devices.create.preauthorized),
-                        (reusable and v.capabilities.devices.create.reusable),
-                        any(group.results()),
-                        any(tag in v.capabilities.devices.create.tags for tag in tags),
-                        any(tag not in v.capabilities.devices.create.tags for tag in excluded_tags),
-                    )):
-                        values.append(dk)
-                else:
-                    if any(
-                        any(group.results()),
-                        any(tag in v.tags for tag in tags),
-                        any(tag not in v.tags for tag in excluded_tags),
-                    ):
-                        values.append(dk)
-        else:
-            for dk, v in responses.items():
-                group = Group(
-                    delimiter = "and",
-                    dk = dk,
-                    ephemeral = ephemeral,
-                    excluded_tags = excluded_tags,
-                    groups = groups,
-                    not_ephemeral = not_ephemeral,
-                    not_preauthorized = not_preauthorized,
-                    not_reusable = not_reusable,
-                    preauthorized = preauthorized,
-                    reusable = reusable,
-                    tags = tags,
-                    using_keys = using_keys,
-                    value = v,
-                    verbose = ctx.obj.verbose,
-                )
-                if using_keys:
-                    if all(n for n in (
-                        (ephemeral and v.capabilities.devices.create.ephemeral) if ephemeral else None,
-                        (not_ephemeral and not v.capabilities.devices.create.ephemeral) if not_ephemeral else None,
-                        (not_preauthorized and not v.capabilities.devices.create.preauthorized) if not_preauthorized else None,
-                        (not_reusable and not v.capabilities.devices.create.reusable) if not_reusable else None,
-                        (preauthorized and v.capabilities.devices.create.preauthorized) if preauthorized else None,
-                        (reusable and v.capabilities.devices.create.reusable) if reusable else None,
-                        all(group.results()) if groups else None,
-                        all(tag in v.capabilities.devices.create.tags for tag in tags) if tags else None,
-                        all(tag not in v.capabilities.devices.create.tags for tag in excluded_tags) if excluded_tags else None,
-                    ) if n is not None):
-                        values.append(dk)
-                else:
-                    if all(n for n in (
-                        all(group.results()) if groups else None,
-                        all(tag in v.tags for tag in tags) if tags else None,
-                        all(tag not in v.tags for tag in excluded_tags) if excluded_tags else None,
-                    ) if n is not None):
-                        values.append(dk)
     if ctx.obj.verbose:
         print("Key Dictionary:")
         pprint(responses)
@@ -643,7 +732,7 @@ Note that tags here must be prefixed with `tag:'.""",
 )
 @click.pass_context
 def create(ctx, tags, ephemeral, preauthorized, reusable, just_key, count, groups):
-    tags = { f"tag:{tag}" for tag in tags }
+    tags = { f"tag:{tag}" for tag in tags if not tag.startswith("tag:") }
     if groups:
         for group in groups:
             split_group = group.split()
