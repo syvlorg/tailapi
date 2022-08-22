@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "tailapi"
+version = "1.0.0.0"
+description = "A python application and library to interact with the tailscale api!"
+authors = ["sylvorg <jeet.ray@syvl.org>"]
+license = "OREO"
+include = [
+	"tailapi/**/*.py",
+	"tailapi/**/*.hy",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+oreo = { git = "https://github.com/syvlorg/oreo.git", branch = "main" }
+magicattr = "*"
+requests = "*"
+rapidfuzz = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "^3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
