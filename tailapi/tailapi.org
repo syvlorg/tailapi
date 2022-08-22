@@ -251,14 +251,17 @@ Adapted from [[https://stackoverflow.com/users/918959/antti-haapala-%d0%a1%d0%bb
           (defn get [ self response-file [all-override False] [recreate-override False] ]
                 (setv write-response (partial self.write :all-override all-override)
                       responses (cond (or self.recreate-response recreate-override) (write-response)
-                                      (.exists response_file) (with [f (open response-file)]
+                                      (.exists response-file) (with [f (open response-file)]
                                                                     (Dict (.load json f)))
                                       True (write-response)))
-                (for [dk self.excluded]
-                     (if (.isnumeric dk)
-                         (for [[k v] (.items responses)]
-                              (when (= dk v.id) (del (get responses k))))
-                         (del (get responses dk))))
+                (when self.excluded
+                      (let [ ids (dfor [k v] (.items responses) [v.id k])
+                             kids (.keys ids)
+                             kres (.keys responses) ]
+                           (for [dk self.excluded]
+                                (if (.isnumeric dk)
+                                    (del (get responses (get ids (get (.extractOne process dk kids :scorer fuzz.WRatio) 0))))
+                                    (del (get responses (get (.extractOne process dk kres :scorer fuzz.WRatio) 0)))))))
                 (return responses))
 
           (defn get-all [ self [all-override False] [recreate-override False] ]

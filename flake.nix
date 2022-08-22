@@ -38,13 +38,13 @@
             version = "1.0.0.0";
             format = "pyproject";
             disabled = pythonOlder "3.10";
-            doCheck = false;
             src = ./.;
             buildInputs = [ poetry-core ];
             nativeBuildInputs = buildInputs;
             propagatedBuildInputs = [ oreo magicattr requests rapidfuzz ];
             pythonImportsCheck = [ pname ];
             checkInputs = [ pytestCheckHook pytest-hy pytest-randomly pytest-parametrized pytest-custom_exit_code ];
+            pytestFlagsArray = toList "--suppress-no-test-exit-code";
             postPatch = ''
                 substituteInPlace pyproject.toml --replace "oreo = { git = \"https://github.com/${owner}/oreo.git\", branch = \"main\" }" ""
                 substituteInPlace setup.py --replace "'oreo @ git+https://github.com/${owner}/oreo.git@main'," ""
