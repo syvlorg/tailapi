@@ -27,7 +27,7 @@
             , magicattr
             , requests
             , rapidfuzz
-        }: j.mkPythonPackage self.pkgs.${stdenv.targetPlatform.system}.Pythons.${self.type}.pkgs (rec {
+        }: j.mkPythonPackage self stdenv [] (rec {
             owner = "syvlorg";
             inherit pname;
             disabled = pythonOlder "3.10";
