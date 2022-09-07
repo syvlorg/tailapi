@@ -22,7 +22,6 @@
 #+begin_src hy
 (import addict [Dict])
 (import autoslot [Slots])
-(import click)
 (import collections [ChainMap])
 (import functools [partial])
 (import ipaddress [ip-address])
@@ -59,6 +58,12 @@
 
 #+begin_src hy
 (require hyrule [-> assoc unless])
+#+end_src
+
+* Application Imports
+
+#+begin_src hy
+(import click)
 #+end_src
 
 * Miscellaneous
@@ -221,7 +226,7 @@ Adapted from [[https://stackoverflow.com/users/918959/antti-haapala-%d0%a1%d0%bb
 ** Parent
 
 #+begin_src hy
-(defclass dk-class [ Slots ]
+(defclass DK [ Slots ]
           (defn __init__ [ self auth response-files recreate-response values excluded domain type verbose dry-run ]
                 (setv self.values (or (list values) [ "all" ])
                       self.all (or (not values) (in "all" values))
@@ -503,7 +508,7 @@ Adapted from [[https://stackoverflow.com/users/7938503/plagon][Plagon's]] commen
 ** Devices
 
 #+begin_src hy
-(defclass device-class [ dk-class ]
+(defclass Devices [ DK ]
           (defn __init__ [ self recreate-response response-files auth values domain excluded verbose dry-run ]
                 (.__init__ (super) :values values :auth auth :response-files response-files :recreate-response recreate-response :excluded excluded :domain domain :type "devices" :verbose verbose :dry-run dry-run))
 
@@ -539,7 +544,7 @@ Adapted from [[https://stackoverflow.com/users/7938503/plagon][Plagon's]] commen
 ** Keys
 
 #+begin_src hy
-(defclass key-class [ dk-class ]
+(defclass Keys [ DK ]
           (defn __init__ [ self values response-files auth recreate-response domain excluded verbose dry-run ]
                 (.__init__ (super) :values values :auth auth :response-files response-files :recreate-response recreate-response :excluded excluded :domain domain :type "keys" :verbose verbose :dry-run dry-run))
 
@@ -567,7 +572,7 @@ Adapted from [[https://stackoverflow.com/users/7938503/plagon][Plagon's]] commen
                                             #[f[Sorry; something happened when trying to delete key of id "{key}"!]f]
                                             :ignore-error ignore-error))))
 
-          (defn create-key [ self [ ephemeral False ] [ preauthorized False ] [ reusable False ] [ tags #() ] [ print-key False ] ]
+          (defn create-key [ self [ ephemeral False ] [ preauthorized False ] [ reusable False ] [ tags #() ] ]
                 (setv data (Dict)
                       data.capabilities.devices.create { "ephemeral" ephemeral
                                                          "preauthorized" preauthorized
@@ -646,14 +651,15 @@ every index here matches to the same index in `--keys', while a value of `all' i
                 excluded ]
       (.ensure-object ctx dict)
       (setv type- (if (or all-keys keys (= ctx.invoked-subcommand "create")) "key" "device")
-            ctx.obj.cls ((eval (+ type- "_class")) :auth (HTTPBasicAuth api-key "")
-                                                   :domain domain
-                                                   :recreate-response recreate-response
-                                                   :excluded excluded
-                                                   :verbose verbose
-                                                   :dry-run dry-run
-                                                   :values (eval (+ type- "s"))
-                                                   :response-files (eval (+ type- "_response_files")))))
+            types- (+ type- "s")
+            ctx.obj.cls ((eval (.capitalize types-)) :auth (HTTPBasicAuth api-key "")
+                                                     :domain domain
+                                                     :recreate-response recreate-response
+                                                     :excluded excluded
+                                                     :verbose verbose
+                                                     :dry-run dry-run
+                                                     :values (eval types-)
+                                                     :response-files (eval (+ type- "_response_files")))))
 #+end_src
 
 ** Show

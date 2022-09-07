@@ -9,7 +9,6 @@
 
 (import addict [Dict])
 (import autoslot [Slots])
-(import click)
 (import collections [ChainMap])
 (import functools [partial])
 (import ipaddress [ip-address])
@@ -30,6 +29,8 @@
              (import toolz [first])))
 
 (require hyrule [-> assoc unless])
+
+(import click)
 
 (defn raise-response-error [error-message response]
       (raise (ValueError (+ error-message " Response reason: " response.reason))))
@@ -169,7 +170,7 @@
                     (when self.value.capabilities (yield-from (.t/results self)))
                     (yield-from (.t/results self)))))
 
-(defclass dk-class [ Slots ]
+(defclass DK [ Slots ]
           (defn __init__ [ self auth response-files recreate-response values excluded domain type verbose dry-run ]
                 (setv self.values (or (list values) [ "all" ])
                       self.all (or (not values) (in "all" values))
@@ -435,7 +436,7 @@
                                                  :responses (dfor value values [ value (get responses value) ])
                                                  :convert convert))))))
 
-(defclass device-class [ dk-class ]
+(defclass Devices [ DK ]
           (defn __init__ [ self recreate-response response-files auth values domain excluded verbose dry-run ]
                 (.__init__ (super) :values values :auth auth :response-files response-files :recreate-response recreate-response :excluded excluded :domain domain :type "devices" :verbose verbose :dry-run dry-run))
 
@@ -467,7 +468,7 @@
                                         #[f[Sorry; something happened when trying to delete device {of_id}"{device}"!]f]
                                         :ignore-error ignore-error))))
 
-(defclass key-class [ dk-class ]
+(defclass Keys [ DK ]
           (defn __init__ [ self values response-files auth recreate-response domain excluded verbose dry-run ]
                 (.__init__ (super) :values values :auth auth :response-files response-files :recreate-response recreate-response :excluded excluded :domain domain :type "keys" :verbose verbose :dry-run dry-run))
 
@@ -495,7 +496,7 @@
                                             #[f[Sorry; something happened when trying to delete key of id "{key}"!]f]
                                             :ignore-error ignore-error))))
 
-          (defn create-key [ self [ ephemeral False ] [ preauthorized False ] [ reusable False ] [ tags #() ] [ print-key False ] ]
+          (defn create-key [ self [ ephemeral False ] [ preauthorized False ] [ reusable False ] [ tags #() ] ]
                 (setv data (Dict)
                       data.capabilities.devices.create { "ephemeral" ephemeral
                                                          "preauthorized" preauthorized
@@ -569,14 +570,15 @@ every index here matches to the same index in `--keys', while a value of `all' i
                 excluded ]
       (.ensure-object ctx dict)
       (setv type- (if (or all-keys keys (= ctx.invoked-subcommand "create")) "key" "device")
-            ctx.obj.cls ((eval (+ type- "_class")) :auth (HTTPBasicAuth api-key "")
-                                                   :domain domain
-                                                   :recreate-response recreate-response
-                                                   :excluded excluded
-                                                   :verbose verbose
-                                                   :dry-run dry-run
-                                                   :values (eval (+ type- "s"))
-                                                   :response-files (eval (+ type- "_response_files")))))
+            types- (+ type- "s")
+            ctx.obj.cls ((eval (.capitalize types-)) :auth (HTTPBasicAuth api-key "")
+                                                     :domain domain
+                                                     :recreate-response recreate-response
+                                                     :excluded excluded
+                                                     :verbose verbose
+                                                     :dry-run dry-run
+                                                     :values (eval types-)
+                                                     :response-files (eval (+ type- "_response_files")))))
 
 (defn [ (.command tailapi)
         (.argument click "options" :nargs -1 :required False)

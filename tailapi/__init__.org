@@ -14,12 +14,6 @@ RichTraceback.install(show_locals = True)
 import hy
 #+end_src
 
-** From
-
-#+begin_src py
-from addict import Dict
-#+end_src
-
 ** Everything From Tailapi
 
 Adapted from [[https://github.com/hylang/hyrule/blob/master/hyrule/__init__.py][here]],
@@ -35,6 +29,13 @@ from tailapi.tailapi import *
 #+end_src
 
 ** Click Application
+*** Imports
+
+#+begin_src py
+from addict import Dict
+#+end_src
+
+*** Main
 
 #+begin_src py
 if __name__ == "__main__":

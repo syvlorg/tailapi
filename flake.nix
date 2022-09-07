@@ -35,11 +35,9 @@
             propagatedBuildInputs = [ oreo magicattr requests rapidfuzz ];
             postPatch = ''
                 substituteInPlace pyproject.toml --replace "oreo = { git = \"https://github.com/${owner}/oreo.git\", branch = \"main\" }" ""
-                substituteInPlace setup.py --replace "'oreo @ git+https://github.com/${owner}/oreo.git@main'," ""
+                substituteInPlace setup.py --replace "'oreo @ git+https://github.com/${owner}/oreo.git@main'," "" || :
             '';
-            meta = {
-                description = "A python application and library to interact with the tailscale api!";
-            };
+            meta.description = "A python application and library to interact with the tailscale api!";
         });
     };
 }
