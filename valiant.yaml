@@ -1,0 +1,8 @@
+dirs:
+  - ../oreo
+test:
+  cmd: nix-shell --show-trace ./passtest.nix
+  deps:
+    shell: True
+    args:
+      - ./passtest.nix

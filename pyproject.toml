@@ -10,17 +10,17 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.12"
+orjson = "*"
 oreo = { git = "https://github.com/syvlorg/oreo.git", branch = "main" }
 magicattr = "*"
 requests = "*"
-rapidfuzz = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
 poetry = "*"
 poetry2setup = "*"
-pytest-hy = "*"
+pytest-hy = { git = "https://github.com/syvlorg/pytest-hy.git", branch = "master" }
 pytest-randomly = "*"
 pytest-parametrized = "*"
 pytest-sugar = "*"
@@ -28,3 +28,18 @@ pytest-sugar = "*"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = [
+	"--strict-markers",
+]
+markers = [
+	"create",
+	"delete",
+	"ephemeral",
+	"filter",
+	"policy",
+	"preauthorized",
+	"reusable",
+	"test_object",
+]
