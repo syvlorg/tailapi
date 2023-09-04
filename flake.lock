@@ -151,8 +151,8 @@
         "xero-figlet-fonts": "xero-figlet-fonts"
       },
       "locked": {
-        "lastModified": 1693845203,
-        "narHash": "sha256-VXSHn0V8F9yYOIEyD/iy6iS4t0YvxFekOnkLxtkIDAY=",
+        "lastModified": 1693851010,
+        "narHash": "sha256-lV5j83lnb5ljYudy14P5gf9dbaEFk9RmxThfLwPvfAk=",
         "submodules": true,
         "type": "git",
         "url": "file:///home/shadowrylander/shadowrylander/bundle"
@@ -217,8 +217,8 @@
         "xero-figlet-fonts": "xero-figlet-fonts_2"
       },
       "locked": {
-        "lastModified": 1693845203,
-        "narHash": "sha256-VXSHn0V8F9yYOIEyD/iy6iS4t0YvxFekOnkLxtkIDAY=",
+        "lastModified": 1693851010,
+        "narHash": "sha256-lV5j83lnb5ljYudy14P5gf9dbaEFk9RmxThfLwPvfAk=",
         "submodules": true,
         "type": "git",
         "url": "file:///home/shadowrylander/shadowrylander/bundle"
@@ -2518,8 +2518,8 @@
         ]
       },
       "locked": {
-        "lastModified": 1664041864,
-        "narHash": "sha256-2e0DZx3lphZ/Qm0x9dhfpYj2OtFWxks02lX6M1SHD4w=",
+        "lastModified": 1693851020,
+        "narHash": "sha256-Kv28r6XCoFsPUwqNyxL0J+5EmDVm1tODgGKDmfgi99Q=",
         "type": "git",
         "url": "file:///home/shadowrylander/shadowrylander/sylveon/syvlorg/oreo"
       },
@@ -3099,8 +3099,8 @@
         "sh": "sh"
       },
       "locked": {
-        "lastModified": 1693845202,
-        "narHash": "sha256-dfcCQdGbQ32QW9PFJwkzVAulIKLtOujqw6f5QeDUjoY=",
+        "lastModified": 1693851010,
+        "narHash": "sha256-hY8J75/WTcPCCqWto/BFsXfwyQ+/UFE25pFsjZcsWBw=",
         "submodules": true,
         "type": "git",
         "url": "file:///home/shadowrylander/shadowrylander/sylveon/syvlorg/valiant"
@@ -3131,8 +3131,8 @@
         "sh": "sh_2"
       },
       "locked": {
-        "lastModified": 1693845202,
-        "narHash": "sha256-dfcCQdGbQ32QW9PFJwkzVAulIKLtOujqw6f5QeDUjoY=",
+        "lastModified": 1693851010,
+        "narHash": "sha256-hY8J75/WTcPCCqWto/BFsXfwyQ+/UFE25pFsjZcsWBw=",
         "submodules": true,
         "type": "git",
         "url": "file:///home/shadowrylander/shadowrylander/sylveon/syvlorg/valiant"
