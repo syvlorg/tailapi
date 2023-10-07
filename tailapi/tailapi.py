@@ -16,11 +16,12 @@ try:
 except ImportError:
     import click
 
+help = any(h for h in ["-h", "--help"] if h in sys.argv)
 tailscale_atk = environ.get(
-    "TAILSCALE_ATK", SH._run(environ.get("TAILSCALE_ATK_COMMAND", None))
+    "TAILSCALE_ATK", SH._run(environ.get("TAILSCALE_ATK_COMMAND", help))
 )
 default_tailscale_atk = environ.get(
-    "DEFAULT_TAILSCALE_ATK", SH._run(environ.get("DEFAULT_TAILSCALE_ATK_COMMAND", None))
+    "DEFAULT_TAILSCALE_ATK", SH._run(environ.get("DEFAULT_TAILSCALE_ATK_COMMAND", help))
 )
 
 
